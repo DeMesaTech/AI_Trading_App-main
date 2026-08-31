@@ -26,7 +26,7 @@ def rsi(series: pd.Series, length: int = 14) -> pd.Series:
     return rsi_values.fillna(50)
 
 
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=10)
 def get_current_price(symbol: str) -> float:
     try:
         url = f"https://fapi.binance.com/fapi/v1/ticker/price?symbol={symbol}"
@@ -38,7 +38,7 @@ def get_current_price(symbol: str) -> float:
     return 0.0
 
 
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=10)
 def fetch_live_data(symbol: str, interval: str) -> pd.DataFrame:
     url = f"https://fapi.binance.com/fapi/v1/klines?symbol={symbol}&interval={interval}&limit=100"
     response = requests.get(url, timeout=3)

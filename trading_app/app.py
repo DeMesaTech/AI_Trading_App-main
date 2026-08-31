@@ -347,7 +347,7 @@ def update_trade_tracker(symbol: str, timeframe: str, signal: str, price: float,
         del active[symbol]
 
 
-@st.fragment(run_every="5s")
+@st.fragment(run_every="15s")
 def live_market_terminal() -> None:
     st.markdown("---")
     st.markdown('<div class="section-title">⚡ LIVE MARKET TERMINAL</div>', unsafe_allow_html=True)
