@@ -1,0 +1,6 @@
+cd "C:\Users\krisscelalmario\OneDrive\Desktop\AI_Trading_App\AI_Trading_App-main"
+
+& "C:/Python314/python.exe" -m streamlit run server.py
+
+
+

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freedom | AI Market Intelligence</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #151b24;
+      --panel-2: #1b2330;
+      --line: #293342;
+      --muted: #8490a3;
+      --text: #e6edf3;
+      --cyan: #4cc9f0;
+      --green: #22c55e;
+      --red: #ef5565;
+      --orange: #f4ad4f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 900px;
+      overflow-x: auto;
+      background: var(--bg);
+      color: var(--text);
+      font: 12px "Segoe UI", sans-serif;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: 48px 1fr 38px;
+      height: 100vh;
+      min-height: 620px;
+    }
+
+    .topbar,
+    .bottombar {
+      display: flex;
+      align-items: center;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar {
+      gap: 12px;
+      padding: 0 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 164px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .eagle {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--cyan);
+      border-radius: 50%;
+      color: var(--cyan);
+      font-size: 15px;
+    }
+
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 135px;
+      padding: 8px 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .search span {
+      color: var(--cyan);
+    }
+
+    .toolbar,
+    .timeframes {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .tool,
+    .timeframe,
+    .range {
+      padding: 7px 8px;
+      background: transparent;
+      border-radius: 3px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .tool:hover,
+    .timeframe:hover,
+    .range:hover,
+    .active {
+      background: #263244;
+      color: #fff;
+    }
+
+    .timeframe.active {
+      color: var(--cyan);
+    }
+
+    .top-spacer {
+      flex: 1;
+    }
+
+    .trade {
+      padding: 8px 14px;
+      background: #173d34;
+      border: 1px solid #2b8c72;
+      border-radius: 3px;
+      color: #65e0b8;
+      font-weight: 600;
+    }
+
+    .publish {
+      padding: 8px 13px;
+      background: var(--cyan);
+      border-radius: 3px;
+      color: #07131b;
+      font-weight: 700;
+    }
+
+    .replay-menu {
+      position: relative;
+    }
+
+    .replay-toggle {
+      padding: 7px 9px;
+      background: transparent;
+      border-radius: 3px;
+      color: var(--muted);
+    }
+
+    .replay-toggle:hover,
+    .replay-menu.open .replay-toggle {
+      background: #263244;
+      color: #fff;
+    }
+
+    .replay-panel {
+      position: absolute;
+      top: 35px;
+      right: 0;
+      z-index: 10;
+      display: none;
+      width: 210px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--panel);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+    }
+
+    .replay-menu.open .replay-panel {
+      display: block;
+    }
+
+    .replay-panel h4 {
+      margin: 0 0 10px;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .replay-panel button,
+    .replay-panel select {
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: var(--panel-2);
+      color: var(--text);
+    }
+
+    .replay-actions {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 9px;
+    }
+
+    .replay-actions button:first-child {
+      color: var(--green);
+    }
+
+    .replay-date {
+      width: 100%;
+      margin: 0 0 9px;
+    }
+
+    .replay-state {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .replay-mode {
+      color: var(--orange);
+    }
+
+    .market-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: var(--panel-2);
+      font-family: Consolas, monospace;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .market-chip .positive {
+      color: var(--green);
+    }
+
+    .market-chip .negative {
+      color: var(--red);
+    }
+
+    .countdown {
+      color: var(--orange);
+    }
+
+    .countdown-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 3px rgba(244, 173, 79, .15);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      min-height: 0;
+    }
+
+    .rail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 9px 0;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+    }
+
+    .right-rail {
+      border-right: 0;
+      border-left: 1px solid var(--line);
+    }
+
+    .rail button {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      background: transparent;
+      border-radius: 4px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .rail button:hover,
+    .rail button.active {
+      background: #263244;
+      color: var(--cyan);
+    }
+
+    .rail button.tool-selected {
+      outline: 1px solid var(--cyan);
+      color: var(--cyan);
+    }
+
+    .rail .divider {
+      width: 24px;
+      height: 1px;
+      margin: 7px 0;
+      background: var(--line);
+    }
+
+    .chart-area {
+      position: relative;
+      display: grid;
+      grid-template-rows: 38px 1fr;
+      min-width: 0;
+      background: #10151d;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .symbol {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .symbol b {
+      color: var(--orange);
+    }
+
+    .ohlc {
+      color: var(--muted);
+    }
+
+    .ohlc strong {
+      color: #c9d1d9;
+    }
+
+    .chart-wrap {
+      position: relative;
+      min-height: 0;
+    }
+
+    #chart {
+      position: absolute;
+      inset: 0;
+    }
+
+    .intel-title {
+      position: absolute;
+      top: 10px;
+      left: 14px;
+      z-index: 2;
+      color: #bcc7d5;
+      font-size: 11px;
+    }
+
+    .intel-title b {
+      color: var(--cyan);
+    }
+
+    .intel-actions {
+      margin-left: 10px;
+      color: var(--muted);
+    }
+
+    .signal-stack {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      z-index: 2;
+      display: flex;
+      gap: 7px;
+      transform: translateX(-50%);
+    }
+
+    .signal-banner {
+      position: absolute;
+      top: 56px;
+      left: 50%;
+      z-index: 4;
+      display: none;
+      padding: 11px 16px;
+      transform: translateX(-50%);
+      border: 1px solid;
+      border-radius: 5px;
+      font-weight: 800;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .28);
+      white-space: nowrap;
+    }
+
+    .signal-banner.show {
+      display: block;
+    }
+
+    .signal-banner.long {
+      border-color: #55d49b;
+      background: #1e9f70;
+      color: #061810;
+    }
+
+    .signal-banner.short {
+      border-color: #ff9ca5;
+      background: #c73e51;
+      color: #fff;
+    }
+
+    .signal-banner.exit {
+      border-color: #ffe4a6;
+      background: #e9a52f;
+      color: #171006;
+    }
+
+    .signal-banner button {
+      margin-left: 12px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, .65);
+      color: #fff;
+    }
+
+    .price-line {
+      display: none;
+    }
+
+    .price-line::before {
+      content: '';
+      flex: 1;
+      margin-top: 12px;
+      border-top: 1px dashed var(--green);
+    }
+
+    .price-line.negative::before {
+      border-color: var(--red);
+    }
+
+    .price-tags {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .price-tag {
+      padding: 6px 9px;
+      border-radius: 3px 0 0 0;
+      background: var(--green);
+      color: #fff;
+      font: 700 11px Consolas, monospace;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
+    }
+
+    .price-tag.negative {
+      background: var(--red);
+    }
+
+    .price-tag-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, .16);
+    }
+
+    .price-countdown {
+      display: none;
+    }
+
+    .badge {
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: rgba(21, 27, 36, .92);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+    }
+
+    .badge span {
+      display: block;
+      margin-top: 3px;
+      color: var(--orange);
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    .market-flow span {
+      color: var(--cyan);
+    }
+
+    #status span {
+      color: var(--green);
+    }
+
+    .order-panel {
+      position: absolute;
+      top: 52px;
+      left: 14px;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 100px 66px 100px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: rgba(21, 27, 36, .94);
+    }
+
+    .order {
+      padding: 8px 7px;
+      text-align: center;
+    }
+
+    .order+.order {
+      border-left: 1px solid var(--line);
+    }
+
+    .order b {
+      display: block;
+      font-size: 11px;
+    }
+
+    .order small {
+      color: var(--muted);
+    }
+
+    .sell b {
+      color: var(--red);
+    }
+
+    .buy b {
+      color: var(--cyan);
+    }
+
+    .watermark {
+      position: absolute;
+      right: 16px;
+      bottom: 22px;
+      z-index: 2;
+      display: flex;
+      flex-direction: row-reverse;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .watermark-copy {
+      text-align: right;
+    }
+
+    .watermark-icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--cyan);
+      border-radius: 10px;
+      background: #111a26;
+      box-shadow: 0 0 18px rgba(76, 201, 240, .18);
+      color: var(--cyan);
+    }
+
+    .watermark-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .watermark-copy strong {
+      display: block;
+      color: var(--cyan);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .watermark-copy small {
+      display: block;
+      margin-top: -2px;
+      color: #8490a3;
+      font-size: 9px;
+      letter-spacing: .16em;
+    }
+
+    .draw-dock {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      z-index: 3;
+      display: flex;
+      gap: 2px;
+      padding: 4px;
+      transform: translateX(-50%);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: rgba(21, 27, 36, .96);
+    }
+
+    .draw-dock button {
+      width: 28px;
+      height: 25px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .draw-dock button:hover {
+      color: var(--cyan);
+    }
+
+    .bottombar {
+      justify-content: space-between;
+      padding: 0 12px;
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+    }
+
+    .ranges,
+    .bottom-tools {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .range {
+      padding: 5px 8px;
+    }
+
+    .clock {
+      color: var(--muted);
+    }
+
+    @media (max-width: 1100px) {
+
+      .timeframes .timeframe:nth-child(n+6),
+      .toolbar .tool:nth-child(n+5) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="eagle">F</span> FREEDOM</div><button class="search"><span>⌕</span> BTCUSDT
+        <b>⌄</b></button><button class="tool">＋</button>
+      <nav class="timeframes" aria-label="Timeframes"><button class="timeframe active">1m</button><button
+          class="timeframe">3m</button><button class="timeframe">5m</button><button
+          class="timeframe">15m</button><button class="timeframe">30m</button><button
+          class="timeframe">45m</button><button class="timeframe">1h</button><button
+          class="timeframe">3h</button><button class="timeframe">4h</button><button class="timeframe">D</button><button
+          class="timeframe">W</button><button class="timeframe">M</button></nav>
+      <div class="top-spacer"></div>
+      <div class="market-chip"><span id="live-price">$--</span><span>|</span><span class="countdown"><i
+            class="countdown-dot"></i> <span id="countdown">00:00</span></span></div>
+      <div class="replay-menu" id="replay-menu"><button class="replay-toggle" id="replay-toggle">▶ Replay</button>
+        <div class="replay-panel">
+          <h4>Bar Replay / Backtest</h4>
+          <div class="replay-actions"><button id="replay-play">▶ Play</button><button id="replay-reset">↺ Reset</button>
+          </div><select id="replay-speed">
+            <option value="2000">0.5x</option>
+            <option value="1000" selected>1x</option>
+            <option value="500">2x</option>
+            <option value="200">5x</option>
+          </select>
+          <p class="replay-state" id="replay-state">Live market mode</p>
+        </div>
+      </div>
+      <nav class="toolbar"><button class="tool">◈⌄</button><button class="tool">ƒx</button><button
+          class="tool">▦⌄</button><button class="tool">◫</button><button class="tool">◷</button><button
+          class="tool">↶</button><button class="tool">↷</button></nav><button class="tool">▤ FREEDOM 1⌄</button><button
+        class="trade">Trade</button><button class="publish">Publish</button>
+    </header>
+    <main class="workspace">
+      <aside class="rail left-rail" aria-label="Drawing tools"><button class="active" data-tool="cursor"
+          title="Cursor">⌁</button><button data-tool="crosshair" title="Crosshair">＋</button><button
+          data-tool="trendline" title="Trendlines">╱</button><button data-tool="fib" title="Fibonacci">⌗</button><button
+          data-tool="brush" title="Brush">✎</button><button data-tool="ruler" title="Ruler">↔</button>
+        <div class="divider"></div><button title="Zoom in">⌕</button><button title="Magnet">⌁</button><button
+          title="Lock">⌑</button><button title="Hide all">◉</button><button title="Delete">⌫</button>
+      </aside>
+      <section class="chart-area">
+        <div class="chart-head"><span class="symbol"><b>●</b> Bitcoin / TetherUS · 1 · Binance</span><span
+            class="ohlc">O <strong id="open">-</strong> H <strong id="high">-</strong> L <strong id="low">-</strong> C
+            <strong id="close">-</strong> <span id="change">-</span></span></div>
+        <div class="chart-wrap">
+          <div id="chart"></div>
+          <div class="intel-title"><b>AI Market Intelligence V5.2</b> - Whale + Big Move + Smart TP <span
+              class="intel-actions">◉ ⚙ {} ⌫ •••</span></div>
+          <div class="signal-banner" id="signal-banner"><span id="signal-message"></span><button
+              id="dismiss-signal">OK</button></div>
+          <div class="price-line" id="price-line">
+            <div class="price-tags">
+              <div class="price-tag" id="price-tag"><span class="price-tag-dot"></span><span id="line-price">-</span>
+              </div>
+              <div class="price-countdown">⏱ 1m close in <span id="chart-countdown">00:00</span></div>
+            </div>
+          </div>
+          <div class="signal-stack">
+            <div class="badge" id="status">SIGNAL<span>CONNECTING...</span></div>
+            <div class="badge">POTENTIAL EXIT TP<span id="exit">MONITORING</span></div>
+          </div>
+          <div class="order-panel">
+            <div class="order sell"><small>PRICE</small><b>SELL</b><small id="sell-price">-</small></div>
+            <div class="order"><small>QTY</small><b>0.01</b><small>BTC</small></div>
+            <div class="order buy"><small>PRICE</small><b>BUY</b><small id="buy-price">-</small></div>
+          </div>
+          <div class="watermark"><span class="watermark-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg></span><span class="watermark-copy"><strong>FreDomCri</strong><small>clintoncloud</small></span>
+          </div>
+          <div class="draw-dock"><button data-tool="cursor" title="Crosshair">⌁</button><button data-tool="trendline"
+              title="Trendline">╱</button><button data-tool="projection" title="Projection">↗</button><button
+              data-tool="horizontal" title="Horizontal line">＋</button><button data-tool="channel"
+              title="Parallel channel">═</button><button data-tool="fib" title="Fibonacci">⌗</button><button
+              data-tool="brush" title="Brush">✎</button><button title="Delete">⌫</button></div>
+        </div>
+      </section>
+      <aside class="rail right-rail" aria-label="Utilities"><button title="Watchlist">▤</button><button
+          title="Alerts">◷</button><button title="Data window">▥</button><button title="Object tree">⚙</button><button
+          title="Hotlist">▦</button><button title="Calendar">▣</button><button title="Notifications">♧</button><button
+          title="Community">◎</button>
+        <div class="divider"></div><button title="Settings">⚙</button><button title="Help">?</button>
+      </aside>
+    </main>
+    <footer class="bottombar">
+      <div class="ranges"><button class="range active">1D</button><button class="range">5D</button><button
+          class="range">1M</button><button class="range">3M</button><button class="range">6M</button><button
+          class="range">YTD</button><button class="range">1Y</button><button class="range">5Y</button><button
+          class="range">ALL</button><button class="range">▣</button></div>
+      <div class="bottom-tools"><button class="tool">☷</button><button class="tool">⌁</button><button
+          class="tool">↕</button><button class="tool">＋</button><button class="tool">−</button><button
+          class="tool">⌗</button><button class="tool">✎</button><button class="tool">⌫</button></div><span class="clock"
+        id="clock">--:--:-- UTC+8　⚙</span>
+    </footer>
+  </div>
+  <script>
+    const chartElement = document.getElementById('chart');
+    const chart = LightweightCharts.createChart(chartElement, { width: chartElement.clientWidth, height: chartElement.clientHeight, layout: { background: { color: '#10151d' }, textColor: '#8490a3' }, grid: { vertLines: { color: '#202936' }, horzLines: { color: '#202936' } }, timeScale: { borderColor: '#293342', timeVisible: true }, rightPriceScale: { borderColor: '#293342' } });
+    const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, { upColor: '#22c55e', downColor: '#ef5565', borderVisible: false, wickUpColor: '#22c55e', wickDownColor: '#ef5565' });
+    const markerController = LightweightCharts.createSeriesMarkers(candleSeries);
+    let candleData = [], htfCandleData = [], marketData = {}, signalMarkers = [], replaying = false, replayPlaying = false, replayIndex = 0, replayTimer;
+    const replayDate = document.createElement('input'); replayDate.id = 'replay-date'; replayDate.type = 'datetime-local'; replayDate.className = 'replay-date'; replayDate.title = 'Replay start date and time'; document.querySelector('.replay-panel').insertBefore(replayDate, document.querySelector('.replay-actions'));
+    const price = value => Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function updatePriceLabels(candle) { const current = Number(candle.close); const previous = candleData.length > 1 ? Number(candleData[candleData.length - 2].close) : current; const delta = current - previous; const recent = candleData.slice(-100); const minPrice = Math.min(...recent.map(item => Number(item.low)), current); const maxPrice = Math.max(...recent.map(item => Number(item.high)), current); const pricePercentage = maxPrice > minPrice ? Math.min(Math.max(((current - minPrice) / (maxPrice - minPrice)) * 100, 10), 90) : 50; const tag = document.getElementById('price-tag'); document.getElementById('price-line').style.top = (100 - pricePercentage) + '%'; document.getElementById('open').textContent = price(candle.open); document.getElementById('high').textContent = price(candle.high); document.getElementById('low').textContent = price(candle.low); document.getElementById('close').textContent = price(current); document.getElementById('live-price').textContent = '$' + price(current); document.getElementById('live-price').className = delta >= 0 ? 'positive' : 'negative'; document.getElementById('change').textContent = (delta >= 0 ? '+' : '') + price(delta); document.getElementById('change').className = delta >= 0 ? 'positive' : 'negative'; document.getElementById('line-price').textContent = price(current); tag.classList.toggle('negative', delta < 0); document.getElementById('price-line').classList.toggle('negative', delta < 0); document.getElementById('sell-price').textContent = price(current); document.getElementById('buy-price').textContent = price(current + .01); }
+    let currentSignal = null, lastBackendMarker = '';
+    function playSoundAlert(type) { try { const context = new (window.AudioContext || window.webkitAudioContext)(); const oscillator = context.createOscillator(); const gain = context.createGain(); oscillator.connect(gain); gain.connect(context.destination); const now = context.currentTime; oscillator.type = type.startsWith('EXIT') ? 'square' : type === 'SHORT' ? 'sawtooth' : 'sine'; oscillator.frequency.setValueAtTime(type === 'SHORT' ? 440 : 587.33, now); oscillator.frequency.setValueAtTime(type === 'SHORT' ? 220 : 880, now + .15); gain.gain.setValueAtTime(type.startsWith('EXIT') ? .5 : .25, now); oscillator.start(now); oscillator.stop(now + .35); } catch (error) { console.log('Audio unavailable', error); } }
+    function addSignalMarker(type, candle) { if (!candle || !['LONG', 'SHORT'].includes(type)) return; const marker = { time: candle.time, position: type === 'SHORT' ? 'aboveBar' : 'belowBar', color: type === 'SHORT' ? '#ef5565' : '#22c55e', shape: type === 'SHORT' ? 'arrowDown' : 'arrowUp', text: type === 'SHORT' ? 'SHORT' : 'BUY' }; signalMarkers = signalMarkers.filter(item => item.time !== candle.time || item.position !== marker.position); signalMarkers.push(marker); signalMarkers.sort((first, second) => first.time - second.time); markerController.setMarkers(signalMarkers); }
+    function triggerSignal(type) { currentSignal = type; const banner = document.getElementById('signal-banner'); banner.className = 'signal-banner show ' + (type.startsWith('EXIT') ? 'exit' : type === 'LONG' ? 'long' : 'short'); document.getElementById('signal-message').textContent = type.startsWith('EXIT') ? 'EXIT SIGNAL: CLOSE POSITION NOW' : type + ' ENTRY SIGNAL DETECTED'; playSoundAlert(type); }
+    document.getElementById('dismiss-signal').addEventListener('click', () => document.getElementById('signal-banner').classList.remove('show'));
+    function analysisCandles() { return replaying ? candleData.slice(0, replayIndex + 1) : candleData; }
+    function sendToAIServer() { fetch('http://127.0.0.1:5000/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candles: analysisCandles(), htfCandles: htfCandleData, marketData }) }).then(response => response.json()).then(data => { const badge = document.getElementById('status'); const badgeMessage = badge?.querySelector('span'); if (badge) badge.childNodes[0].textContent = data.setup === 'BUY WATCH' ? 'BUY WATCH' : data.setup === 'SELL WATCH' ? 'SELL WATCH' : data.status || 'SIGNAL'; if (badgeMessage) badgeMessage.textContent = data.signal || 'NO SIGNAL'; const exit = document.getElementById('exit'); if (exit) exit.textContent = data.status === 'EXIT' ? 'ACTIVE' : data.confidence ? `CONFIDENCE ${data.confidence}%` : 'MONITORING'; }).catch(() => { const badgeMessage = document.getElementById('status')?.querySelector('span'); if (badgeMessage) badgeMessage.textContent = 'BACKEND OFFLINE'; }); }
+    function refreshMarketData() { fetch('http://127.0.0.1:5000/market-data').then(response => response.json()).then(data => { marketData = data; sendToAIServer(); }).catch(() => { marketData = {}; }); } refreshMarketData(); setInterval(refreshMarketData, 15000);
+    function updateReplayState() { const state = document.getElementById('replay-state'); state.textContent = replaying ? `Replay ${replayIndex + 1}/${candleData.length} · ${replayPlaying ? 'Playing' : 'Paused'}` : 'Live market mode'; state.className = replaying ? 'replay-state replay-mode' : 'replay-state'; document.getElementById('replay-play').textContent = replayPlaying ? 'Ⅱ Pause' : '▶ Play'; }
+    function renderReplayFrame() { const visible = candleData.slice(0, replayIndex + 1); candleSeries.setData(visible); if (visible.length) updatePriceLabels(visible[visible.length - 1]); updateReplayState(); sendToAIServer(); }
+    function startReplay() { if (candleData.length < 201) return; const selectedTime = replayDate.value ? new Date(replayDate.value).getTime() / 1000 : null; const selectedIndex = selectedTime ? candleData.findIndex(candle => candle.time >= selectedTime) : -1; if (selectedTime && selectedIndex < 0) { document.getElementById('replay-state').textContent = 'Selected date is outside loaded history'; document.getElementById('replay-state').className = 'replay-state replay-mode'; return; } replaying = true; replayPlaying = true; replayIndex = Math.max(199, selectedIndex >= 0 ? selectedIndex : replayIndex || 199); clearInterval(replayTimer); renderReplayFrame(); replayTimer = setInterval(() => { if (replayIndex >= candleData.length - 1) { replayPlaying = false; clearInterval(replayTimer); updateReplayState(); return; } replayIndex += 1; renderReplayFrame(); }, Number(document.getElementById('replay-speed').value)); }
+    function toggleReplayPlay() { if (!replaying) { startReplay(); return; } if (replayPlaying) { replayPlaying = false; clearInterval(replayTimer); updateReplayState(); } else { startReplay(); } }
+    function resetReplay() { clearInterval(replayTimer); replaying = false; replayPlaying = false; replayIndex = 0; candleSeries.setData(candleData); updateReplayState(); sendToAIServer(); }
+    document.getElementById('replay-toggle').addEventListener('click', () => document.getElementById('replay-menu').classList.toggle('open')); document.getElementById('replay-play').addEventListener('click', toggleReplayPlay); document.getElementById('replay-reset').addEventListener('click', resetReplay); document.getElementById('replay-speed').addEventListener('change', () => { if (replayPlaying) startReplay(); });
+    fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=1000').then(r => r.json()).then(data => { candleData = data.map(d => ({ time: d[0] / 1000, open: +d[1], high: +d[2], low: +d[3], close: +d[4], volume: +d[5] })); const firstDate = new Date(candleData[0].time * 1000); const lastDate = new Date(candleData[candleData.length - 1].time * 1000); replayDate.min = firstDate.toISOString().slice(0, 16); replayDate.max = lastDate.toISOString().slice(0, 16); candleSeries.setData(candleData); updatePriceLabels(candleData[candleData.length - 1]); sendToAIServer(); }).catch(() => { document.getElementById('status').querySelector('span').textContent = 'BINANCE OFFLINE'; });
+    fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=4h&limit=250').then(r => r.json()).then(data => { htfCandleData = data.map(d => ({ close: +d[4] })); sendToAIServer(); });
+    const socket = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1m'); socket.onmessage = event => { if (replaying) return; const k = JSON.parse(event.data).k; const candle = { time: k.t / 1000, open: +k.o, high: +k.h, low: +k.l, close: +k.c, volume: +k.v }; candleSeries.update(candle); if (candleData.length && candleData[candleData.length - 1].time === candle.time) candleData[candleData.length - 1] = candle; else candleData.push(candle); updatePriceLabels(candle); sendToAIServer(); };
+    document.querySelectorAll('.timeframe, .range').forEach(button => button.addEventListener('click', () => { button.parentElement.querySelector('.active')?.classList.remove('active'); button.classList.add('active'); }));
+    document.querySelectorAll('[data-tool]').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('[data-tool]').forEach(tool => tool.classList.remove('tool-selected')); document.querySelectorAll(`[data-tool="${button.dataset.tool}"]`).forEach(tool => tool.classList.add('tool-selected')); }));
+    function getCountdown() { const seconds = new Date().getSeconds(); return 60 - seconds === 60 ? 0 : 60 - seconds; } function updateCountdown() { const remaining = getCountdown(); const formatted = '00:' + String(remaining).padStart(2, '0'); document.getElementById('countdown').textContent = formatted; } function resizeChart() { chart.applyOptions({ width: chartElement.clientWidth, height: chartElement.clientHeight }); } window.addEventListener('resize', resizeChart); setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour12: false }) + ' UTC+8　⚙'; updateCountdown(); }, 1000); updateCountdown(); resizeChart();
+  </script>
+</body>
+
+</html>

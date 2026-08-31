@@ -1,0 +1,106 @@
+//@version=6
+strategy("Master Whale & Breakout Engine V6", overlay=true, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// ==========================================
+// 1. INPUT CONFIGURATIONS
+// ==========================================
+// Whale Detection Inputs
+i_volMult       = input.float(2.0, "Whale Volume Multiplier", group="Whale Engine")
+i_bodyRatio     = input.float(0.6, "Min Candle Body Ratio (0-1)", group="Whale Engine")
+i_rsiLen        = input.int(14, "RSI Length", group="Whale Engine")
+
+// Consolidation & Breakout Inputs
+i_bbLen         = input.int(20, "Bollinger Bands Length", group="Consolidation")
+i_bbStd         = input.float(2.0, "Bollinger Bands StdDev", group="Consolidation")
+i_kcMult        = input.float(1.5, "Keltner Channel Multiplier", group="Consolidation")
+
+// Multi-Timeframe (MTF) Inputs
+i_htf           = input.timeframe("240", "Higher Timeframe Filter", group="MTF Settings")
+i_emaFastLen    = input.int(50, "Fast EMA Length", group="Trend Filter")
+i_emaSlowLen    = input.int(200, "Slow EMA Length", group="Trend Filter")
+
+// ==========================================
+// 2. CORE CALCULATIONS & INDICATORS
+// ==========================================
+// EMAs & Trend Context
+emaFast = ta.ema(close, i_emaFastLen)
+emaSlow = ta.ema(close, i_emaSlowLen)
+isBullishTrend = emaFast > emaSlow
+isBearishTrend = emaFast < emaSlow
+
+// RSI & Volume Profile
+rsiVal = ta.rsi(close, i_rsiLen)
+avgVol = ta.sma(volume, 20)
+isHighVolume = volume > (avgVol * i_volMult)
+
+// Candle Body Calculation
+candleBody = math.abs(close - open)
+candleRange = high - low
+isSolidBody = candleRange > 0 and (candleBody / candleRange) >= i_bodyRatio
+
+// Higher Timeframe (HTF) Trend Check
+htfEmaFast = request.security(syminfo.tickerid, i_htf, ta.ema(close, i_emaFastLen), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+htfEmaSlow = request.security(syminfo.tickerid, i_htf, ta.ema(close, i_emaSlowLen), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+isHtfBullish = htfEmaFast > htfEmaSlow
+isHtfBearish = htfEmaFast < htfEmaSlow
+
+// ==========================================
+// 3. CONSOLIDATION & BREAKOUT DETECTION
+// ==========================================
+bbUpper = ta.sma(close, i_bbLen) + (ta.stdev(close, i_bbLen) * i_bbStd)
+bbLower = ta.sma(close, i_bbLen) - (ta.stdev(close, i_bbLen) * i_bbStd)
+kcUpper = ta.ema(close, i_bbLen) + (ta.atr(i_bbLen) * i_kcMult)
+kcLower = ta.ema(close, i_bbLen) - (ta.atr(i_bbLen) * i_kcMult)
+
+// Squeeze Condition (Consolidation)
+isSqueezed = (bbUpper < kcUpper) and (bbLower > kcLower)
+
+// ==========================================
+// 4. WHALE SCORING ENGINE
+// ==========================================
+var int buyScore = 0
+var int sellScore = 0
+
+buyScore := 0
+sellScore := 0
+
+if isHighVolume and isSolidBody
+    if close > open and rsiVal > 50
+        buyScore += 3
+    if close < open and rsiVal < 50
+        sellScore += 3
+
+if isBullishTrend and isHtfBullish
+    buyScore += 2
+if isBearishTrend and isHtfBearish
+    sellScore += 2
+
+// ==========================================
+// 5. TRADING SIGNALS & REASONING
+// ==========================================
+longBreakout  = ta.crossover(close, bbUpper) and buyScore >= 3 and not isSqueezed
+shortBreakout = ta.crossunder(close, bbLower) and sellScore >= 3 and not isSqueezed
+
+// Market Direction Engine
+longMarketDirection  = longBreakout and isBullishTrend and isHtfBullish
+shortMarketDirection = shortBreakout and isBearishTrend and isHtfBearish
+
+// ==========================================
+// 6. EXECUTION & RISK MANAGEMENT
+// ==========================================
+if (longMarketDirection)
+    strategy.entry("Whale_Long", strategy.long)
+    strategy.exit("TP/SL_Long", "Whale_Long", stop=low * 0.98, limit=close * 1.05)
+
+if (shortMarketDirection)
+    strategy.entry("Whale_Short", strategy.short)
+    strategy.exit("TP/SL_Short", "Whale_Short", stop=high * 1.02, limit=close * 0.95)
+
+// Visual Plots
+plot(emaFast, color=color.green, title="EMA Fast")
+plot(emaSlow, color=color.red, title="EMA Slow")
+plot(bbUpper, color=color.blue, title="BB Upper")
+plot(bbLower, color=color.blue, title="BB Lower")
+
+plotshape(longMarketDirection, title="Whale Buy", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(shortMarketDirection, title="Whale Sell", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)

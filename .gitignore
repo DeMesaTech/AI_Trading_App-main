@@ -1,0 +1,78 @@
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ==============================
+# Virtual Environment
+# ==============================
+.venv/
+venv/
+env/
+ENV/
+
+# ==============================
+# Environment / Secrets
+# ==============================
+.env
+.env.*
+!.env.example
+
+# ==============================
+# IDE / Editor
+# ==============================
+.vscode/
+.idea/
+*.code-workspace
+
+# ==============================
+# OS Files
+# ==============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================
+# Logs
+# ==============================
+*.log
+
+# ==============================
+# Temporary / Backup Files
+# ==============================
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# ==============================
+# Python Cache / Test
+# ==============================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==============================
+# Local Runtime / Trading Data
+# ==============================
+active_trades.json
+trade_history.json
+signal_state.json
+
+# ==============================
+# Local Backup / Notes
+# ==============================
+server.py_backup.txt
+app open.txt
+
+# ==============================
+# Optional generated files
+# ==============================
+*.csv
+*.xlsx
