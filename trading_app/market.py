@@ -97,7 +97,7 @@ def analyze_market(df):
     ema9 = ema(close, length=9)
     ema21 = ema(close, length=21)
     ema50 = ema(close, length=50)
-    rsi = rsi(close, length=14)
+    rsi_values = rsi(close, length=14)
 
     idx = -2
     candle_time = df["time"].iloc[idx]
@@ -106,8 +106,8 @@ def analyze_market(df):
     current_ema9 = float(ema9.iloc[idx])
     current_ema21 = float(ema21.iloc[idx])
     current_ema50 = float(ema50.iloc[idx])
-    current_rsi = float(rsi.iloc[idx])
-    previous_rsi = float(rsi.iloc[idx - 1])
+    current_rsi = float(rsi_values.iloc[idx])
+    previous_rsi = float(rsi_values.iloc[idx - 1])
 
     avg_volume = volume.rolling(20).mean().iloc[idx]
     if pd.isna(avg_volume):
