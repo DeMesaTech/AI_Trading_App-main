@@ -29,7 +29,6 @@ from .market import (
     analyze_market,
     fetch_live_data,
     get_current_price,
-    get_elapsed_text,
     is_market_neutral,
     to_ph_time,
 )
@@ -166,10 +165,48 @@ def render_signal_timing(symbol: str, timeframe: str, signal: str, candle_time) 
         return
 
     formatted_time = ph_time.strftime("%m-%d-%Y %I:%M:%S %p")
-    elapsed = get_elapsed_text(candle_time)
+    elapsed_html = f"""
+    <style>
+        body {{ margin: 0; background: transparent; }}
+        .signal-time, .signal-elapsed {{
+            display: block;
+            text-align: center;
+            font-family: sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 14px;
+        }}
+        .signal-time {{ color: #38bdf8; }}
+        .signal-elapsed {{ color: #facc15; }}
+    </style>
+    <span class="signal-time">🕒 {formatted_time} PHT</span>
+    <span id="signal-elapsed" class="signal-elapsed"></span>
+    <script>
+        const candleTime = new Date({candle_time.isoformat()!r});
+        const elapsedElement = document.getElementById("signal-elapsed");
 
-    st.markdown(f'<span class="signal-time">🕒 {formatted_time} PHT</span>', unsafe_allow_html=True)
-    st.markdown(f'<span class="signal-elapsed">⏱ {elapsed}</span>', unsafe_allow_html=True)
+        function updateElapsed() {{
+            let elapsedSeconds = Math.max(0, Math.floor((Date.now() - candleTime.getTime()) / 1000));
+            const hours = Math.floor(elapsedSeconds / 3600);
+            elapsedSeconds %= 3600;
+            const minutes = Math.floor(elapsedSeconds / 60);
+            const seconds = elapsedSeconds % 60;
+            let elapsed = `${{seconds}}s ago`;
+
+            if (hours > 0) {{
+                elapsed = `${{hours}}h ${{minutes}}m ${{seconds}}s ago`;
+            }} else if (minutes > 0) {{
+                elapsed = `${{minutes}}m ${{seconds}}s ago`;
+            }}
+
+            elapsedElement.textContent = `⏱ ${{elapsed}}`;
+        }}
+
+        updateElapsed();
+        setInterval(updateElapsed, 1000);
+    </script>
+    """
+    st.components.v1.html(elapsed_html, height=36)
 
 
 def get_signal_and_time(df, symbol: str, timeframe: str):
